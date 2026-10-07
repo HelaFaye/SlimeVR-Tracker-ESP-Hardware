@@ -157,7 +157,7 @@ assembly notes.
 - **Whether the node needs the ATtiny at all** for this build, given none of the eight
   extensions use the power gate or reset. A PCF8574 plus the OR gate would do it — at the
   cost of one-hot arming and the identity block. See the node MCU section in
-  `HARDWARE-RJ45-SPI-BUS.md`.
+  [`HARDWARE-RJ45-SPI-BUS.md`](https://github.com/HelaFaye/SlimeVR-Tracker-ESP/blob/main/docs/dev/HARDWARE-RJ45-SPI-BUS.md) in the firmware repo.
 
 ---
 

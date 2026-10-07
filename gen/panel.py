@@ -53,7 +53,7 @@ def describe(selection):
 def write_config(selection, outdir):
     cols, rows, cw, ch = layout(selection)
     cfg = {
-        "_comment": "kikit panelize --preset :this file. See hardware/README.md.",
+        "_comment": "kikit panelize --preset :this file. See README.md.",
         "layout": {
             "type": "grid",
             "rows": rows,

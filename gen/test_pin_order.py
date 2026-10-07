@@ -11,7 +11,7 @@ that the guard actually fires.
 Works by mutating parts.py, running verify.py, and restoring. Safe to interrupt: the
 original is restored in a finally block.
 
-    python3 hardware/gen/test_pin_order.py
+    python3 gen/test_pin_order.py
 """
 
 import pathlib

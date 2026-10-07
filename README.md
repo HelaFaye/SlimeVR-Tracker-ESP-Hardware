@@ -1,12 +1,29 @@
-# Hardware generator
+# SlimeVR-Tracker-ESP-Hardware
+
+Hardware for I2SPI, which carries several SlimeVR IMUs on one RJ45 cable: an ESP32-C5 hub
+board and ATtiny412 sensor-node boards.
+
+| Repo | What lives there |
+|---|---|
+| **this repo** | Board definitions, KiCad generator, vendored symbol libraries, BOM, panel |
+| [SlimeVR-Tracker-ESP](https://github.com/HelaFaye/SlimeVR-Tracker-ESP) | Tracker firmware, the I2SPI protocol (`docs/I2SPI.md`, `ATTinyCSProtocol.h`), the ATtiny node firmware (`extras/attiny-cs-node`), cable pinout (`docs/dev/HARDWARE-RJ45-SPI-BUS.md`), chain simulation |
+| [SlimeVR-Server](https://github.com/HelaFaye/SlimeVR-Server) | Server fork; synthetic tracker for end-to-end testing |
+
+The wire protocol and cable pinout are defined in the firmware repo. When changing a net
+here that crosses the RJ45, change it there too.
+
+Board specifications: [`docs/BOARD-SPECS.md`](docs/BOARD-SPECS.md).
+Checks: `./verify.sh`.
+
+## Generator
 
 Generates KiCad projects, a JLCPCB BOM and a V-scored panel configuration for the two
 I2SPI boards.
 
 ```sh
-python3 hardware/gen/verify.py                    # check every symbol and footprint
-python3 hardware/gen/mklib.py --allow-unverified  # build the project symbol library
-python3 hardware/gen/wizard.py --preset 18point   # pick boards, emit everything
+python3 gen/verify.py                    # check every symbol and footprint
+python3 gen/mklib.py --allow-unverified  # build the project symbol library
+python3 gen/wizard.py --preset 18point   # pick boards, emit everything
 ```
 
 ## What it generates
@@ -57,10 +74,15 @@ so mixing a 45 mm hub with a 26 mm node makes every cell 45 mm.
 If the grid has empty cells, they are free boards — fill them with spares rather than
 paying for panel area that comes back blank.
 
+## Licence
+
+Original work here is dual-licensed MIT / Apache-2.0, matching the firmware it was split
+from. The libraries under `lib/vendor/` are third-party; see `lib/vendor/PROVENANCE.md`.
+
 ## Design provenance
 
 Net names, terminator values, pull-up placement and the power-gating topology all come
-from `docs/dev/BOARD-SPECS.md` and the decision records. Two that are easy to undo by
+from `docs/BOARD-SPECS.md` and the decision records. Two that are easy to undo by
 accident when editing the layout:
 
 - **`CS_LOCAL` never leaves the hub board.** If it reached the connector, every extension

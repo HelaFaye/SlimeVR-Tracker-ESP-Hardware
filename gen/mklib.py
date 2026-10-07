@@ -1,4 +1,4 @@
-"""Emit hardware/lib/slimevr-i2spi.kicad_sym for the parts KiCad 7 doesn't ship.
+"""Emit lib/slimevr-i2spi.kicad_sym for the parts KiCad 7 doesn't ship.
 
 Symbols are laid out mechanically: inputs left, outputs right, power top/bottom. Not
 pretty, but electrically correct and readable, which is what a generated symbol needs

@@ -31,7 +31,7 @@ class Pinout:
 
 
 # ESP32-C5-WROOM-1 and QMC6309 now come from the vendored libraries in
-# hardware/lib/vendor rather than from these tables - see PROVENANCE.md there. The
+# lib/vendor rather than from these tables - see PROVENANCE.md there. The
 # entries below are kept only for the parts still needing a locally generated symbol.
 
 ICM45686 = Pinout(

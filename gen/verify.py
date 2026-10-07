@@ -237,7 +237,7 @@ def have_system_libs():
     """True when a system KiCad symbol library is reachable.
 
     SYM_DIRS[:2] are this project's own libraries, which are always present; a
-    system library beyond them is what the stock-symbol checks need. VERIFY.sh
+    system library beyond them is what the stock-symbol checks need. verify.sh
     probes this so it can skip those suites instead of reporting an uninstalled
     KiCad as a dozen schematic defects.
     """

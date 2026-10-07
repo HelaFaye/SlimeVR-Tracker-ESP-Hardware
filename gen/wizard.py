@@ -1,8 +1,8 @@
 """Build wizard: pick boards and quantities, emit projects, BOM and a panel config.
 
-    python3 hardware/gen/wizard.py                 # interactive
-    python3 hardware/gen/wizard.py --preset 18point
-    python3 hardware/gen/wizard.py --node 8 --hub 5
+    python3 gen/wizard.py                 # interactive
+    python3 gen/wizard.py --preset 18point
+    python3 gen/wizard.py --node 8 --hub 5
 """
 import argparse
 import csv
@@ -116,11 +116,11 @@ def main():
         for p in unverified:
             print(f"  - {p.name} ({p.package})")
         print("A schematic on a wrong pinout looks correct and is not.")
-        print("Check them in hardware/gen/pinouts.py before ordering.")
+        print("Check them in gen/pinouts.py before ordering.")
         print("!" * 68)
 
     print("\nNext: open the schematics, run ERC, lay out each board, then panelise.")
-    print("Layout is NOT generated - see hardware/README.md for why.")
+    print("Layout is NOT generated - see README.md for why.")
     return 0
 
 
