@@ -79,6 +79,13 @@ ATTINY412 = Part(
     value="ATtiny412",
     lcsc=None,  # TODO look up on jlcpcb.com
     description="I2SPI chip-select controller",
+    # From the stock symbol (it extends ATtiny202-SS). An earlier board definition wired
+    # this part as if pin 2 were UPDI and pin 6 the strobe; declaring the map lets
+    # verify.py and check_node_pins.py catch that.
+    pin_functions={
+        "1": "VCC", "2": "PA6", "3": "PA7", "4": "PA1",
+        "5": "PA2", "6": "~{RESET}/PA0", "7": "PA3", "8": "GND",
+    },
 )
 
 MOSFET_P = Part(

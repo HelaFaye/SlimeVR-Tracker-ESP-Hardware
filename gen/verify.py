@@ -71,6 +71,15 @@ def symbol_pins(lib_id):
                 re.S,
             ):
                 pins.setdefault(pm.group(2), pm.group(1))
+        if not pins:
+            # A derived symbol carries no pins of its own: ATtiny412-SS is declared as
+            # (extends "ATtiny202-SS"). Without following that, any such part reads as
+            # "not installed" and its pin map is never checked.
+            parent = re.search(
+                r'\(symbol\s+"' + re.escape(name) + r'"\s*\(extends\s+"([^"]+)"', text
+            )
+            if parent:
+                return symbol_pins(f"{lib}:{parent.group(1)}")
         return pins or None
     return None
 
