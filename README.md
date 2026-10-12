@@ -9,8 +9,11 @@ board and ATtiny412 sensor-node boards.
 | [SlimeVR-Tracker-ESP](https://github.com/HelaFaye/SlimeVR-Tracker-ESP) | Tracker firmware, the I2SPI protocol (`docs/I2SPI.md`, `ATTinyCSProtocol.h`), the ATtiny node firmware (`extras/attiny-cs-node`), cable pinout (`docs/dev/HARDWARE-RJ45-SPI-BUS.md`), chain simulation |
 | [SlimeVR-Server](https://github.com/HelaFaye/SlimeVR-Server) | Server fork; synthetic tracker for end-to-end testing |
 
-The wire protocol and cable pinout are defined in the firmware repo. When changing a net
-here that crosses the RJ45, change it there too.
+The wire protocol and cable pinout are defined in the firmware repo, in the I2SPI
+specification: [`docs/I2SPI.md`](https://github.com/HelaFaye/SlimeVR-Tracker-ESP/blob/feat/esp32c5-rj45-spi-attiny-cs/docs/I2SPI.md).
+It is the standard for any board that joins a chain. §4 covers node hardware, §15 is a
+design checklist for new host and node boards. When changing a net here that crosses the
+RJ45, change it there too.
 
 Board specifications: [`docs/BOARD-SPECS.md`](docs/BOARD-SPECS.md).
 Checks: `./verify.sh`.
