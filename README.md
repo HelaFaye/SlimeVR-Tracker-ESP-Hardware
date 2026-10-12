@@ -65,8 +65,10 @@ The placeholder ESP32-C5 and QMC6309 entries in `pinouts.py` are still `verified
 and unused; `mklib.py` refuses to emit unverified parts without `--allow-unverified`.
 
 Footprints carry the same risk with worse consequences: a wrong land pattern is a board
-you cannot assemble. `verify.py` checks that each footprint exists, not that its pads
-match the part; check land patterns against the datasheets before ordering.
+you cannot assemble. `verify.py` checks that each footprint exists, that it has a pad for
+every pin on its symbol (catching a symbol drawn for a different package), and that every
+pin a board wires exists on the symbol. It cannot check pad geometry: compare land
+patterns against the datasheets before ordering.
 
 Generating schematics needs KiCad's symbol library (or `KICAD_SYMBOL_DIR`), because the
 MOSFET lists several candidate symbols and only the library says which has the right pin
@@ -85,7 +87,9 @@ paying for panel area that comes back blank.
 ## Licence
 
 Original work here is dual-licensed MIT / Apache-2.0, matching the firmware it was split
-from. The libraries under `lib/vendor/` are third-party; see `lib/vendor/PROVENANCE.md`.
+from. The libraries under `lib/vendor/` are third-party: Espressif's is CC-BY-SA 4.0 (with
+the KiCad-style design exception), and the Mumo library's licence is **not yet known**.
+See `lib/vendor/PROVENANCE.md`.
 
 ## Design provenance
 

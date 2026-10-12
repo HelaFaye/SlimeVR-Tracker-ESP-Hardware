@@ -182,7 +182,10 @@ TESTPAD = Part(
 
 CONN_USB = Part(
     "J",
-    "Connector:USB_C_Receptacle",
+    # The USB 2.0, 16-pad symbol, matching the HRO TYPE-C-31-M-12. The full
+    # USB_C_Receptacle symbol has SuperSpeed pins this footprint has no pads for, and is
+    # missing the stacked VBUS/GND pads it does have. KiCad 7 called it _USB2.0.
+    "Connector:USB_C_Receptacle_USB2.0_16P|Connector:USB_C_Receptacle_USB2.0",
     "Connector_USB:USB_C_Receptacle_HRO_TYPE-C-31-M-12",
     "USB-C",
     None,  # TODO look up on jlcpcb.com

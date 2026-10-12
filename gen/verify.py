@@ -43,17 +43,36 @@ def _pin_sort(num):
     return (0, int(num)) if num.isdigit() else (1, num)
 
 
+def _library_text(lib, name):
+    """Text holding symbol `name` from library `lib`, or (None, reason).
+
+    KiCad up to 9 installs one file per library (Device.kicad_sym). KiCad 10's library
+    repository splits each into a directory with one file per symbol
+    (Device.kicad_symdir/R.kicad_sym); accept either, first match in SYM_DIRS order.
+    """
+    for d in SYM_DIRS:
+        f = d / f"{lib}.kicad_sym"
+        if f.exists():
+            return f.read_text(encoding="utf-8", errors="replace"), None
+        symdir = d / f"{lib}.kicad_symdir"
+        if symdir.is_dir():
+            g = symdir / f"{name}.kicad_sym"
+            if g.exists():
+                return g.read_text(encoding="utf-8", errors="replace"), None
+            return None, f"library {lib} has no symbol {name}"
+    return None, f"no such symbol library: {lib}"
+
+
 def symbol_pins(lib_id):
     """number -> pin name for one symbol, or None if it isn't installed."""
     lib, name = lib_id.split(":", 1)
-    for d in SYM_DIRS:
-        f = d / f"{lib}.kicad_sym"
-        if not f.exists():
-            continue
-        text = f.read_text(encoding="utf-8", errors="replace")
+    text, _ = _library_text(lib, name)
+    if text is not None:
         pins = {}
         # Pins live in the unit sub-symbols (Name_0_1, Name_1_1, ...), not the parent.
-        for m in re.finditer(re.escape(f'(symbol "{name}_'), text):
+        # Match the unit names exactly: a bare prefix would also take R_Network08_0_1's
+        # pins when looking up R, and pass or fail a pin map on another part's pins.
+        for m in re.finditer(r'\(symbol "' + re.escape(name) + r'_\d+_\d+"', text):
             start, depth, j = m.start(), 0, m.start()
             while True:
                 if text[j] == "(":
@@ -65,7 +84,11 @@ def symbol_pins(lib_id):
                 j += 1
             block = text[start:j + 1]
             for pm in re.finditer(
-                r'\(pin\s+\S+\s+\S+\s*\(at[^)]*\)\s*\(length[^)]*\)\s*'
+                # Hidden pins carry a bare `hide` before (at ...) or after (length ...),
+                # or (hide yes) in KiCad 9+. Stacked power pins are usually hidden, and
+                # are exactly the ones easy to miss.
+                r'\(pin\s+\S+\s+\S+(?:\s+hide)?\s*\(at[^)]*\)\s*\(length[^)]*\)\s*'
+                r'(?:hide\s*|\(hide\s+\w+\)\s*)?'
                 r'\(name\s+"([^"]*)".*?\(number\s+"([^"]*)"',
                 block,
                 re.S,
@@ -147,14 +170,12 @@ def symbol_exists(lib_id, required_pins=None):
         return False, "none of the candidates exist: " + lib_id.replace("|", ", ")
 
     lib, name = lib_id.split(":", 1)
-    for d in SYM_DIRS:
-        f = d / f"{lib}.kicad_sym"
-        if f.exists():
-            text = f.read_text(encoding="utf-8", errors="replace")
-            if f'(symbol "{name}"' in text:
-                return True, "ok"
-            return False, f"library {lib} has no symbol {name}"
-    return False, f"no such symbol library: {lib}"
+    text, reason = _library_text(lib, name)
+    if text is None:
+        return False, reason
+    if f'(symbol "{name}"' in text:
+        return True, "ok"
+    return False, f"library {lib} has no symbol {name}"
 
 
 def footprint_exists(lib_id):
@@ -176,6 +197,56 @@ def footprint_exists(lib_id):
     return False, f"no such footprint library: {lib}"
 
 
+def footprint_pads(lib_id):
+    """Pad numbers of the first footprint that exists, or None."""
+    for candidate in lib_id.split("|"):
+        lib, name = candidate.split(":", 1)
+        for d in FP_DIRS:
+            f = d / f"{lib}.pretty" / f"{name}.kicad_mod"
+            if f.exists():
+                text = f.read_text(encoding="utf-8", errors="replace")
+                return set(re.findall(r'\(pad\s+"?([^"\s)]+)"?', text)) - {""}
+    return None
+
+
+def resolved_symbol(part):
+    ok, msg = symbol_exists(part.symbol, part.pin_functions)
+    if not ok:
+        return None
+    return msg.split("resolved to ", 1)[1] if msg.startswith("resolved to") else part.symbol
+
+
+def pins_without_pads(part):
+    """Symbol pins the footprint has no pad for: a symbol/footprint package mismatch.
+
+    Pads without pins are allowed (mounting pads, deliberately absent NC pins).
+    """
+    sym = resolved_symbol(part)
+    pads = footprint_pads(part.footprint)
+    if sym is None or pads is None:
+        return None
+    pins = symbol_pins(sym) or {}
+    return sorted(set(pins) - pads, key=_pin_sort)
+
+
+def board_pins_missing_from_symbols():
+    """(board, ref, pins) for board pins the part's symbol does not have. A label on a
+    pin the symbol lacks connects to nothing, so the net silently never reaches the pad."""
+    import boards
+
+    out = []
+    for board, spec in boards.BOARDS.items():
+        for comp in spec["comps"]:
+            sym = resolved_symbol(parts.ALL_PARTS[comp.part])
+            if sym is None:
+                continue
+            pins = symbol_pins(sym) or {}
+            missing = [n for n, net in comp.pins.items() if n not in pins and net != "NC"]
+            if missing:
+                out.append((board, comp.ref, sorted(missing, key=_pin_sort)))
+    return out
+
+
 def main():
     bad = 0
     for name, part in sorted(parts.ALL_PARTS.items()):
@@ -190,7 +261,14 @@ def main():
             if not good:
                 pin_msg = detail
 
-        status = "ok  " if (ok_s and ok_f and pin_msg is None) else "FAIL"
+        unpadded = pins_without_pads(part) if (ok_s and ok_f) else None
+        pad_msg = (
+            f"symbol pins {', '.join(unpadded)} have no pad on the footprint"
+            if unpadded
+            else None
+        )
+
+        status = "ok  " if (ok_s and ok_f and pin_msg is None and pad_msg is None) else "FAIL"
         shown = part.symbol.split("|")[0]
         note = ""
         if ok_s and msg_s.startswith("resolved to"):
@@ -231,6 +309,13 @@ def main():
         if pin_msg:
             print(f"           PIN ORDER: {pin_msg}")
             bad += 1
+        if pad_msg:
+            print(f"           PADS:      {pad_msg}")
+            bad += 1
+    for board, ref, missing in board_pins_missing_from_symbols():
+        print(f"  [FAIL] {board}:{ref} wires pins {', '.join(missing)}, "
+              "which its symbol does not have")
+        bad += 1
     print(f"\n{len(parts.ALL_PARTS)} parts, {bad} problems")
     if bad and not any(d.exists() for d in SYM_DIRS[2:]):
         print(
