@@ -20,7 +20,7 @@ port. Five identical boards in this build.
          │                        │             ├── ICM-45686 (local)
          └── divider ── GPIO1     │             └── RJ45 3V3 (pin 1)
                                   │
-   ESP32-C5 ── SPI ──┬── local IMU CS (GPIO3)
+   ESP32-C5 ── SPI ──┬── local IMU CS (GPIO0)
                      └── RJ45 SCK/MOSI/MISO
               I2C ───── RJ45 SDA/SCL
               GPIO6 ─── RJ45 CS_STROBE
@@ -28,22 +28,30 @@ port. Five identical boards in this build.
 
 ### Net list
 
-| Net | ESP32-C5 | Goes to |
-|---|---|---|
-| `SPI_SCK` | GPIO10 | Local IMU SCLK, RJ45 pin 3 (via 33 Ω) |
-| `SPI_MOSI` | GPIO12 | Local IMU SDI, RJ45 pin 4 (via 33 Ω) |
-| `SPI_MISO` | GPIO11 | Local IMU SDO, RJ45 pin 5 |
-| `CS_LOCAL` | GPIO3 | Local IMU CS only — does **not** leave the board |
-| `CS_STROBE` | GPIO6 | RJ45 pin 6 (via 33 Ω) |
-| `CHAIN_SDA` | GPIO5 | RJ45 pin 7, 2.2 kΩ pull-up to 3V3 |
-| `CHAIN_SCL` | GPIO4 | RJ45 pin 8, 2.2 kΩ pull-up to 3V3 |
-| `IMU_INT` | GPIO9 | Local IMU INT1 |
-| `VBAT_SENSE` | GPIO1 | Divider, 100 k / 220 k |
-| `LED` | GPIO8 | Status LED + 1 kΩ |
-| `AUX_SDA` / `AUX_SCL` | — | Local IMU AUX1 ↔ local QMC6309, 4.7 kΩ pull-ups |
+Module pin numbers are the ESP32-C5-WROOM-1's, checked against Espressif's own KiCad
+symbol in `lib/vendor`. `gen/boards.py` is the source of truth; this table follows it.
 
-Reserved, do not use: GPIO16–22 (flash/PSRAM), GPIO13–14 (USB-JTAG), GPIO2/7/25/27/28
-(strapping), GPIO26 (boot mode).
+| Net | ESP32-C5 | Module pin | Goes to |
+|---|---|---:|---|
+| `SPI_SCK` | GPIO10 | 12 | Local IMU SCLK, RJ45 pin 3 (via 33 Ω) |
+| `SPI_MOSI` | GPIO8 | 10 | Local IMU SDI, RJ45 pin 4 (via 33 Ω) |
+| `SPI_MISO` | GPIO9 | 11 | Local IMU SDO, RJ45 pin 5 |
+| `CS_LOCAL` | GPIO0 | 6 | Local IMU CS only — does **not** leave the board |
+| `CS_STROBE` | GPIO6 | 8 | RJ45 pin 6 (via 33 Ω) |
+| `CHAIN_SDA` | GPIO5 | 16 | RJ45 pin 7, 2.2 kΩ pull-up to 3V3 |
+| `CHAIN_SCL` | GPIO4 | 17 | RJ45 pin 8, 2.2 kΩ pull-up to 3V3 |
+| `IMU_INT` | GPIO24 | 23 | Local IMU INT1 |
+| `VBAT_SENSE` | GPIO1 | 7 | Divider, 100 k / 220 k |
+| `LED` | GPIO23 | 21 | Status LED + 1 kΩ |
+| `UART_TX` / `UART_RX` | GPIO11 / GPIO12 | 25 / 24 | Console header J4 only |
+| `AUX_SDA` / `AUX_SCL` | — | — | Local IMU AUX1 ↔ local QMC6309, 4.7 kΩ pull-ups |
+
+Reserved, do not use: GPIO16–22 (flash/PSRAM), GPIO13–14 (USB-JTAG), GPIO11/12 (the
+module's console UART), GPIO15 (SPICS1 on modules with in-package PSRAM — left
+unconnected), and GPIO2/3/7/25–28 (strapping; tied to defined levels where they need one).
+
+The firmware board `BOARD_SLIMEVR_C5_CHAIN_HUB` uses exactly these pins, with one chain on
+GPIO6. Its `sim/check_board_config.py` refuses reserved GPIOs on any C5 board.
 
 ### Notes that matter
 
@@ -100,14 +108,20 @@ built for this example.
 
 ### Net list
 
-| Net | ATtiny412 | Notes |
-|---|---|---|
-| `CHAIN_SDA` | PA1 | From cable pin 7. No pull-up on this board |
-| `CHAIN_SCL` | PA2 | From cable pin 8. No pull-up on this board |
-| `CS_STROBE` | PA6 | From cable pin 6, input |
-| `CS_IMU` | PA7 | To the IMU's CS. CCL LUT0 alternate output |
-| `SENSOR_PWR` | PA3 | Gate of the VCC pass MOSFET (DEC-014) |
-| `UPDI` | PA0 | Programming pad, 4.7 kΩ to 3V3 |
+| Net | ATtiny412 | SOIC-8 pin | Notes |
+|---|---|---:|---|
+| `VBUS` | VCC | 1 | Cable 3V3 |
+| `CS_STROBE` | PA6 | 2 | From cable pin 6, input |
+| `CS_IMU` | PA7 | 3 | To the IMU's CS. CCL LUT1 output (see below) |
+| `CHAIN_SDA` | PA1 | 4 | From cable pin 7. No pull-up on this board |
+| `CHAIN_SCL` | PA2 | 5 | From cable pin 8. No pull-up on this board |
+| `UPDI` | PA0 | 6 | Programming pad, 4.7 kΩ to 3V3 |
+| `SENSOR_PWR_G` | PA3 | 7 | Gate of the VCC pass MOSFET (DEC-014) |
+| `GND` | GND | 8 | |
+
+Pin numbers are from KiCad's `ATtiny202-SS` symbol, which `ATtiny412-SS` extends.
+`gen/check_node_pins.py` checks `gen/boards.py` against them and against the ports the
+node firmware drives. An earlier revision had six of the eight pins on the wrong pads.
 
 `SPI_SCK`, `SPI_MOSI` and `SPI_MISO` run from the cable **straight to the IMU** and do not
 touch the ATtiny.

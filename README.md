@@ -9,8 +9,11 @@ board and ATtiny412 sensor-node boards.
 | [SlimeVR-Tracker-ESP](https://github.com/HelaFaye/SlimeVR-Tracker-ESP) | Tracker firmware, the I2SPI protocol (`docs/I2SPI.md`, `ATTinyCSProtocol.h`), the ATtiny node firmware (`extras/attiny-cs-node`), cable pinout (`docs/dev/HARDWARE-RJ45-SPI-BUS.md`), chain simulation |
 | [SlimeVR-Server](https://github.com/HelaFaye/SlimeVR-Server) | Server fork; synthetic tracker for end-to-end testing |
 
-The wire protocol and cable pinout are defined in the firmware repo. When changing a net
-here that crosses the RJ45, change it there too.
+The wire protocol and cable pinout are defined in the firmware repo, in the I2SPI
+specification: [`docs/I2SPI.md`](https://github.com/HelaFaye/SlimeVR-Tracker-ESP/blob/feat/esp32c5-rj45-spi-attiny-cs/docs/I2SPI.md).
+It is the standard for any board that joins a chain. §4 covers node hardware, §15 is a
+design checklist for new host and node boards. When changing a net here that crosses the
+RJ45, change it there too.
 
 Board specifications: [`docs/BOARD-SPECS.md`](docs/BOARD-SPECS.md).
 Checks: `./verify.sh`.
@@ -50,19 +53,29 @@ So the flow is: generate schematics → open in KiCad → ERC → lay out by han
 labelling every pin is mechanical and correct, auto-placing readable wires is not.
 Anything sharing a label is one net, and ERC and netlist export both understand that.
 
-## The verification gap that matters
+## Where each pinout comes from
 
-KiCad 7 ships no symbol for the ESP32-C5, the ICM-45686 or the QMC6309 — all three are
-newer than the library. `mklib.py` generates them from `pinouts.py`, and **those pinouts
-were not read off a datasheet.** They are written from package and family knowledge.
+KiCad 7 ships no symbol for the ESP32-C5, the ICM-45686 or the QMC6309.
 
-`mklib.py` refuses to run without `--allow-unverified`, and the wizard prints a banner,
-because a schematic built on a wrong pinout looks entirely correct and stays wrong until
-boards come back from fab. Check each one, then set `verified=True` and record the
-datasheet revision you checked against.
+| Part | Symbol source | Checked against |
+|---|---|---|
+| ESP32-C5-WROOM-1 | `lib/vendor/Espressif` (Espressif's own library) | The vendor symbol itself; hub pin map cross-checked pin by pin |
+| QMC6309 | `lib/vendor/Mumo` | Datasheet: a 4-pad WLCSP, `A1` VSS, `A2` SCL, `B1` VDD, `B2` SDA |
+| ICM-45686 | Generated from `gen/pinouts.py` | TDK DS-000577 Rev 1.0; `verified=True` |
+| ATtiny412 | KiCad stock (`ATtiny412-SS`, extends `ATtiny202-SS`) | `pin_functions` in `gen/parts.py`, checked by `verify.py` and `gen/check_node_pins.py` |
 
-The footprints carry the same caveat with worse consequences: a wrong land pattern is a
-board you cannot assemble.
+The placeholder ESP32-C5 and QMC6309 entries in `pinouts.py` are still `verified=False`
+and unused; `mklib.py` refuses to emit unverified parts without `--allow-unverified`.
+
+Footprints carry the same risk with worse consequences: a wrong land pattern is a board
+you cannot assemble. `verify.py` checks that each footprint exists, that it has a pad for
+every pin on its symbol (catching a symbol drawn for a different package), and that every
+pin a board wires exists on the symbol. It cannot check pad geometry: compare land
+patterns against the datasheets before ordering.
+
+Generating schematics needs KiCad's symbol library (or `KICAD_SYMBOL_DIR`), because the
+MOSFET lists several candidate symbols and only the library says which has the right pin
+order. Without it, `mksch.py` stops rather than guess.
 
 ## Panel notes
 
@@ -77,7 +90,9 @@ paying for panel area that comes back blank.
 ## Licence
 
 Original work here is dual-licensed MIT / Apache-2.0, matching the firmware it was split
-from. The libraries under `lib/vendor/` are third-party; see `lib/vendor/PROVENANCE.md`.
+from. The libraries under `lib/vendor/` are third-party: Espressif's is CC-BY-SA 4.0 (with
+the KiCad-style design exception), and the Mumo library's licence is **not yet known**.
+See `lib/vendor/PROVENANCE.md`.
 
 ## Design provenance
 

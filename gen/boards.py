@@ -30,9 +30,20 @@ NODE_BOARD = [
         "5": "SPI_MISO", "6": "CS_STROBE", "7": "CHAIN_SDA", "8": "CHAIN_SCL",
     }, "chain out - wired pin-for-pin in parallel with J1, zero-length stub"),
 
+    # SOIC-8 pin numbers, from KiCad's ATtiny202-SS base symbol and DS40001911: 1 VCC,
+    # 2 PA6, 3 PA7, 4 PA1, 5 PA2, 6 PA0/UPDI, 7 PA3, 8 GND. Ports are fixed by the node
+    # firmware (extras/attiny-cs-node in SlimeVR-Tracker-ESP) and by the hardware: PA6
+    # strobe in and PA7 CS out for the CCL, PA1/PA2 the TWI's default SDA/SCL, PA3 the
+    # sensor power gate. gen/check_node_pins.py holds the two together.
     Comp("U1", "ATTINY412", "ATtiny412", {
-        "1": "VBUS", "2": "UPDI", "3": "CHAIN_SDA", "4": "CHAIN_SCL",
-        "5": "SENSOR_PWR_G", "6": "CS_STROBE", "7": "CS_IMU", "8": "GND",
+        "1": "VBUS",          # VCC
+        "2": "CS_STROBE",     # PA6
+        "3": "CS_IMU",        # PA7
+        "4": "CHAIN_SDA",     # PA1
+        "5": "CHAIN_SCL",     # PA2
+        "6": "UPDI",          # PA0 / UPDI
+        "7": "SENSOR_PWR_G",  # PA3
+        "8": "GND",
     }, "I2SPI controller"),
 
     Comp("Q1", "MOSFET_P", "DMG2305UX", {

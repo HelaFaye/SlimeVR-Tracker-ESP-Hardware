@@ -7,6 +7,16 @@ Not written here. Copied in because KiCad 7's stock libraries predate these part
 | `Espressif.kicad_sym`, `Espressif.pretty/` | Espressif's official `kicad-libraries` | `ESP32-C5-WROOM-1` symbol + footprint, and every other current Espressif module |
 | `Mumo.kicad_sym`, `Mumo.pretty/` | the Mumo project | `QMC6309` symbol + footprint, `IMU` LGA-14 land pattern |
 
+## Licences
+
+| Library | Licence | Redistribution |
+|---|---|---|
+| Espressif | CC-BY-SA 4.0, with a waiver so designs and generated files using it are not Adapted Material (the same terms as KiCad's own libraries). Text: `LICENSE-Espressif.md`, from espressif/kicad-libraries. | Allowed with attribution; changes to the library files themselves stay CC-BY-SA. Boards made with it are unaffected. |
+| Mumo | **Unknown.** The files carry no licence or author, and no source repository could be found (searched 2026-10-12). The MUMO V1 board itself is listed on PCBWay. | **Unconfirmed.** This repo is public, so either get the author's terms, or replace the two parts used (the `QMC6309` symbol and footprint) with ones drawn here from the QMC6309 datasheet's package drawing. |
+
+Only `Mumo:QMC6309` (symbol and footprint) is used by the boards. The rest of `Mumo.pretty`
+is unused.
+
 ## What these settled
 
 **ESP32-C5-WROOM-1 — authoritative.** Espressif's own library, so the pin numbering is as

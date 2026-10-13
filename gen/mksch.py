@@ -31,8 +31,30 @@ def label(net, x, y, rotation=0):
     )
 
 
+def resolve_symbol(part):
+    """The one symbol to place. A part listing alternatives ("A|B|C") is resolved against
+    the installed KiCad library, checking pin functions where the part declares them.
+
+    An earlier version wrote the "|"-joined list straight into the schematic, which KiCad
+    cannot load. Guessing a candidate without the library is worse: the alternatives
+    exist precisely because their pin orders differ. So without a library this stops.
+    """
+    if "|" not in part.symbol:
+        return part.symbol
+    import verify
+
+    ok, msg = verify.symbol_exists(part.symbol, part.pin_functions)
+    if ok:
+        return msg.split("resolved to ", 1)[1]
+    raise SystemExit(
+        f"{part.value}: cannot choose a symbol from {part.symbol}: {msg}.\n"
+        "Install KiCad's symbol library or point KICAD_SYMBOL_DIR at it; picking one "
+        "blind risks a symbol with the wrong pin order."
+    )
+
+
 def symbol_instance(comp, part, x, y):
-    lib_id = part.symbol
+    lib_id = resolve_symbol(part)
     props = [
         f'    (property "Reference" "{comp.ref}" (at {x:.2f} {y - 12.7:.2f} 0)\n'
         "      (effects (font (size 1.27 1.27))))",

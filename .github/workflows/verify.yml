@@ -1,0 +1,30 @@
+name: Verify
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    # Build totals, the node ATtiny412 pin check, and - with KiCad's stock libraries
+    # installed - every symbol, footprint, pin map, pin-to-pad match and the pin-order
+    # guard. Without the libraries verify.sh skips the KiCad suites, so install them.
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install KiCad libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends kicad-symbols kicad-footprints
+
+      - name: verify.sh
+        run: ./verify.sh

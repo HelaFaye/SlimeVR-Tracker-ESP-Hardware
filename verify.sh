@@ -16,6 +16,7 @@ run() {
 }
 
 run "Build totals (BOM placements, panel)" python3 gen/check_build_totals.py
+run "Node ATtiny412 pins vs node firmware ports" python3 gen/check_node_pins.py
 
 # Both of these resolve stock KiCad symbols by pin function. Without an installed
 # symbol library every part is unresolvable, so they would report the environment,

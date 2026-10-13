@@ -79,6 +79,13 @@ ATTINY412 = Part(
     value="ATtiny412",
     lcsc=None,  # TODO look up on jlcpcb.com
     description="I2SPI chip-select controller",
+    # From the stock symbol (it extends ATtiny202-SS). An earlier board definition wired
+    # this part as if pin 2 were UPDI and pin 6 the strobe; declaring the map lets
+    # verify.py and check_node_pins.py catch that.
+    pin_functions={
+        "1": "VCC", "2": "PA6", "3": "PA7", "4": "PA1",
+        "5": "PA2", "6": "~{RESET}/PA0", "7": "PA3", "8": "GND",
+    },
 )
 
 MOSFET_P = Part(
@@ -175,7 +182,10 @@ TESTPAD = Part(
 
 CONN_USB = Part(
     "J",
-    "Connector:USB_C_Receptacle",
+    # The USB 2.0, 16-pad symbol, matching the HRO TYPE-C-31-M-12. The full
+    # USB_C_Receptacle symbol has SuperSpeed pins this footprint has no pads for, and is
+    # missing the stacked VBUS/GND pads it does have. KiCad 7 called it _USB2.0.
+    "Connector:USB_C_Receptacle_USB2.0_16P|Connector:USB_C_Receptacle_USB2.0",
     "Connector_USB:USB_C_Receptacle_HRO_TYPE-C-31-M-12",
     "USB-C",
     None,  # TODO look up on jlcpcb.com
