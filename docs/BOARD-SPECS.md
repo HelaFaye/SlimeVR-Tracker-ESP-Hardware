@@ -65,14 +65,34 @@ signal-integrity measure on ribbon cable and costs three resistors. `SPI_MISO` g
 series resistor at the hub — it's an input here; if you terminate it, do so at each node's
 driver.
 
-**I2C pull-ups exist only on this board.** 2.2 kΩ, hub only. Nodes must not populate
-pull-ups: two nodes at 4.7 kΩ each already parallel down to 1.5 kΩ, and a full chain would
-be below what many parts can pull low.
+**I2C pull-ups exist only on this board.** 2.2 kΩ (R4, R5), hub only. Nodes must not
+populate pull-ups: two nodes at 4.7 kΩ each already parallel down to 1.5 kΩ, and a full
+chain would be below what many parts can pull low.
+
+2.2 kΩ suits the reference build (at most two nodes per hub on 0.85 m, ~81 pF of a ~160 pF
+budget at 400 kHz). A longer or fuller chain needs a stronger pull-up. Fit R4/R5 = **1 kΩ**
+(same footprint) when the chain exceeds the 2.2 kΩ column:
+
+| Nodes on the chain | Longest cable at 2.2 kΩ | at 1 kΩ |
+|---:|---:|---:|
+| 1 | 2.4 m | 5.7 m |
+| 2 | 2.2 m | 5.4 m |
+| 4 | 1.7 m | 4.9 m |
+| 6 | 1.2 m | 4.4 m |
+| 8 | 0.7 m | 3.9 m |
+| 10 | 0.2 m | 3.4 m |
+| 15 | — | 2.2 m |
+
+Estimates: 15 pF per node per line and 60 pF/m of flat cable, host pin not counted, so
+keep a margin and measure at bring-up. Below ~970 Ω the bus exceeds Fast mode's 3 mA sink
+rating. Beyond the 1 kΩ column, use more, shorter chains. `gen/check_chain_pullups.py`
+recomputes this table from the value in `gen/boards.py` and fails if the reference build no
+longer fits. The model is the firmware repo's, docs/I2SPI.md §14.2.
 
 **The magnetometer is on AUX1, not on the chain I2C.** The QMC6309's device id is fixed at
 `0x7c` with no address strap, so several on one bus would collide. On AUX1 each sits on a
-private bus behind its own IMU, and its samples arrive in the IMU FIFO at no extra bus
-cost. See DEC-008.
+private bus behind its own IMU, and the firmware polls it through the IMU's aux master at no
+chain cost. See DEC-008.
 
 **Battery divider.** 100 k / 220 k with a 180 Ω shield resistance matches the
 `BAT_EXTERNAL` values in `board-defaults.json`. GPIO1 is ADC1, which is required — the C5's
@@ -197,7 +217,8 @@ something to check it against. The specific things worth asking kicad-happy abou
 the boards are drawn:
 
 - Power tree and the divider ratio against the C5's ADC input range.
-- Pull-up sizing against real bus capacitance for the 85 cm chain.
+- Pull-up sizing against real bus capacitance for the 85 cm chain (estimated above; measure
+  the rise time on a scope).
 - The EMC pass on an 8-conductor unshielded cable carrying a 4 MHz clock — this is the
   part of the design I'd least like to be wrong about, and it's exactly what its
   pre-compliance rules are for.
